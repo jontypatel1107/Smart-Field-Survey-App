@@ -68,7 +68,7 @@ export default function DashboardScreen() {
     { title: 'Camera', icon: 'camera', color: colors.accent, route: '/camera' },
     { title: 'Location', icon: 'location', color: colors.secondary, route: '/location' },
     { title: 'Contacts', icon: 'people', color: colors.warning, route: '/contacts' },
-    { title: 'Clipboard', icon: 'clipboard', color: colors.danger, route: '/(tabs)/clipboard' },
+    { title: 'Clipboard', icon: 'clipboard', color: colors.danger, route: '/clipboard' },
     { title: 'History', icon: 'time', color: colors.accent, route: '/(tabs)/history' },
   ];
 

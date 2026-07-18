@@ -21,6 +21,7 @@ export default function RootLayout() {
           <Stack.Screen name="camera" options={{ headerShown: false }} />
           <Stack.Screen name="location" options={{ headerShown: false }} />
           <Stack.Screen name="contacts" options={{ headerShown: false }} />
+          <Stack.Screen name="clipboard" options={{ headerShown: false }} />
         </Stack>
         <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       </ThemeProvider>
