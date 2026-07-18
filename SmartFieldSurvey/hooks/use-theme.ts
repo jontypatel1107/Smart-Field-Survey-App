@@ -61,6 +61,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
 export function useTheme() {
   const ctx = useContext(ThemeContext);
-  if (!ctx) throw new Error('useTheme must be used within ThemeProvider');
+  if (!ctx) return { preference: 'system' as ThemePreference, resolved: 'light' as ResolvedTheme, isDark: false, setPreference: () => {} };
   return ctx;
 }
