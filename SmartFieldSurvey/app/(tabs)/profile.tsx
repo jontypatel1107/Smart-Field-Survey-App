@@ -360,9 +360,9 @@ export default function ProfileScreen() {
             <Text style={[styles.cardTitle, { color: colors.text }]}>Appearance</Text>
           </View>
           <View style={styles.themeRow}>
-            {(['light', 'dark'] as const).map((pref) => {
+            {(['light', 'dark', 'system'] as const).map((pref) => {
               const isActive = preference === pref;
-              const icon = pref === 'light' ? 'sunny' : 'moon';
+              const icon = pref === 'light' ? 'sunny' : pref === 'dark' ? 'moon' : 'phone-portrait';
               return (
                 <Pressable
                   key={pref}
