@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   ScrollView,
   Pressable,
@@ -20,7 +21,7 @@ export default function DashboardScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
-  const { surveys, setSelectedSurvey } = useSurvey();
+  const { surveys, setSelectedSurvey, profileImage } = useSurvey();
   const [refreshing, setRefreshing] = useState(false);
 
   const todayCount = surveys.filter(
@@ -89,16 +90,28 @@ export default function DashboardScreen() {
         }
       >
         {/* Student Details Card */}
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Pressable
+          onPress={() => router.push('/(tabs)/profile')}
+          style={({ pressed }) => [
+            styles.card,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+            pressed && { backgroundColor: colors.background },
+          ]}
+        >
           <View style={styles.cardHeader}>
             <Ionicons name="person-circle" size={20} color={colors.primary} />
             <Text style={[styles.cardTitle, { color: colors.text }]}>Student Details</Text>
+            <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
           </View>
           <View style={styles.studentInfo}>
             <View style={styles.studentAvatar}>
-              <Text style={styles.avatarText}>
-                {studentInfo.name.split(' ').map((n) => n[0]).join('')}
-              </Text>
+              {profileImage ? (
+                <Image source={{ uri: profileImage }} style={styles.studentAvatarImage} />
+              ) : (
+                <Text style={styles.avatarText}>
+                  {studentInfo.name.split(' ').map((n) => n[0]).join('')}
+                </Text>
+              )}
             </View>
             <View style={styles.studentDetails}>
               <Text style={[styles.studentName, { color: colors.text }]}>{studentInfo.name}</Text>
@@ -113,7 +126,7 @@ export default function DashboardScreen() {
               </Text>
             </View>
           </View>
-        </View>
+        </Pressable>
 
         {/* Survey Count Card */}
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -249,6 +262,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
+    overflow: 'hidden',
+  },
+  studentAvatarImage: {
+    width: '100%',
+    height: '100%',
   },
   avatarText: {
     fontSize: 18,
