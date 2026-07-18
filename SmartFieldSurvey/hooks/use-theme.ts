@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useColorScheme as useSystemColorScheme } from 'react-native';
 
-type ThemePreference = 'light' | 'dark' | 'system';
+type ThemePreference = 'light' | 'dark';
 type ResolvedTheme = 'light' | 'dark';
 
 let listeners: Array<() => void> = [];
-let currentPreference: ThemePreference = 'system';
+let currentPreference: ThemePreference = 'light';
 
 function notify() {
   listeners.forEach((l) => l());
@@ -26,7 +25,6 @@ export function getThemePreference(): ThemePreference {
 }
 
 export function useTheme() {
-  const systemTheme = useSystemColorScheme() ?? 'light';
   const [, forceUpdate] = useState(0);
 
   useEffect(() => {
@@ -53,8 +51,7 @@ export function useTheme() {
     } catch {}
   }, []);
 
-  const resolved: ResolvedTheme =
-    currentPreference === 'system' ? systemTheme : currentPreference;
+  const resolved: ResolvedTheme = currentPreference;
 
   const setPreference = useCallback((pref: ThemePreference) => {
     setThemePreference(pref);
