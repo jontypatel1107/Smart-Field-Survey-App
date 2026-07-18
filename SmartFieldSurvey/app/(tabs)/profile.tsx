@@ -15,6 +15,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useTheme } from '@/hooks/use-theme';
 import { Colors } from '@/constants/theme';
 import { studentInfo } from '@/constants/data';
 import { useSurvey } from '@/context/SurveyContext';
@@ -45,6 +46,7 @@ const PREFERENCES = [
 export default function ProfileScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const { preference, setPreference } = useTheme();
   const router = useRouter();
   const { surveys, profileImage, setProfileImage } = useSurvey();
   const { width } = useWindowDimensions();
@@ -352,6 +354,38 @@ export default function ProfileScreen() {
           })}
         </View>
 
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="color-palette" size={20} color={colors.primary} />
+            <Text style={[styles.cardTitle, { color: colors.text }]}>Appearance</Text>
+          </View>
+          <View style={styles.themeRow}>
+            {(['light', 'dark', 'system'] as const).map((pref) => {
+              const isActive = preference === pref;
+              const icon = pref === 'light' ? 'sunny' : pref === 'dark' ? 'moon' : 'phone-portrait';
+              return (
+                <Pressable
+                  key={pref}
+                  onPress={() => setPreference(pref)}
+                  style={({ pressed }) => [
+                    styles.themeOption,
+                    {
+                      backgroundColor: isActive ? colors.primary + '20' : colors.background,
+                      borderColor: isActive ? colors.primary : colors.border,
+                    },
+                    pressed && { opacity: 0.7 },
+                  ]}
+                >
+                  <Ionicons name={icon as any} size={20} color={isActive ? colors.primary : colors.textSecondary} />
+                  <Text style={[styles.themeLabel, { color: isActive ? colors.primary : colors.textSecondary }]}>
+                    {pref.charAt(0).toUpperCase() + pref.slice(1)}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+
         <View style={styles.actionRow}>
           <Pressable
             onPress={() => router.push('/(tabs)/history')}
@@ -642,6 +676,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
+  },
+  themeRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  themeOption: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    gap: 6,
+  },
+  themeLabel: {
+    fontSize: 13,
+    fontWeight: '600',
   },
   actionRow: {
     flexDirection: 'row',
