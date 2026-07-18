@@ -72,6 +72,19 @@
             "backgroundColor": "#000000"
           }
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#2563EB"
+        }
+      ],
+      [
+        "react-native-maps",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Smart Field Survey to show survey locations on the map"
+        }
       ]
     ],
     "experiments": {
