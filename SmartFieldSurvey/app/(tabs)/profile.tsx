@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
@@ -85,7 +86,16 @@ export default function ProfileScreen() {
     });
 
     if (!result.canceled) {
-      setProfileImage(result.assets[0].uri);
+      const originalUri = result.assets[0].uri;
+      const filename = `profile_image_${Date.now()}.jpg`;
+      const destUri = `${FileSystem.documentDirectory}${filename}`;
+
+      try {
+        await FileSystem.copyAsync({ from: originalUri, to: destUri });
+        setProfileImage(destUri);
+      } catch {
+        setProfileImage(originalUri);
+      }
     }
   };
 

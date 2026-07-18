@@ -10,8 +10,9 @@ import {
 } from 'react-native';
 import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
-import * as FileSystem from 'expo-file-system/legacy';
 import * as MediaLibrary from 'expo-media-library';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
 import { useSurvey } from '@/context/SurveyContext';
@@ -80,38 +81,26 @@ export default function CameraScreen() {
   };
 
   const savePhotoToGallery = async (uri: string) => {
-    const permission = await MediaLibrary.requestPermissionsAsync();
-
-    if (permission.status !== 'granted') {
-      Alert.alert(
-        'Permission Needed',
-        'Please allow photo library access to save images to your gallery.'
-      );
-      return false;
-    }
-
-    const baseDirectory = FileSystem.documentDirectory ?? FileSystem.cacheDirectory;
-
-    if (!baseDirectory) {
-      throw new Error('A writable storage directory is not available on this device.');
-    }
-
-    const folderPath = `${baseDirectory}field-survey/`;
-    await FileSystem.makeDirectoryAsync(folderPath, { intermediates: true });
+    try {
+      if (typeof MediaLibrary.requestPermissionsAsync === 'function') {
+        const permission = await MediaLibrary.requestPermissionsAsync(true);
+        if (permission.status === 'granted') {
+          await MediaLibrary.createAssetAsync(uri);
+          return true;
+        }
+      }
+    } catch {}
 
     const fileName = `field-survey-${Date.now()}.jpg`;
-    const destinationUri = `${folderPath}${fileName}`;
-    const sourceUri = uri.startsWith('file://') ? uri : `file://${uri}`;
+    const destUri = `${FileSystem.documentDirectory}field-survey/`;
+    await FileSystem.makeDirectoryAsync(destUri, { intermediates: true });
+    const filePath = `${destUri}${fileName}`;
+    await FileSystem.copyAsync({ from: uri, to: filePath });
 
-    await FileSystem.copyAsync({ from: sourceUri, to: destinationUri });
-
-    try {
-      await MediaLibrary.saveToLibraryAsync(destinationUri);
-      return true;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      throw new Error(`Media library save failed: ${message}`);
+    if (await Sharing.isAvailableAsync()) {
+      await Sharing.shareAsync(filePath);
     }
+    return true;
   };
 
   const handleCapture = async () => {
@@ -127,11 +116,10 @@ export default function CameraScreen() {
         try {
           const saved = await savePhotoToGallery(result.uri);
           if (saved) {
-            Alert.alert('Saved', 'Photo captured and saved to your gallery.');
+            Alert.alert('Saved', 'Photo has been saved successfully.');
           }
         } catch (saveError) {
-          const message = saveError instanceof Error ? saveError.message : 'Please try again.';
-          Alert.alert('Error', `Photo was captured, but could not be saved to gallery. ${message}`);
+          Alert.alert('Error', 'Photo was captured but could not be saved. Please try again.');
         }
       }
     } catch {
@@ -179,11 +167,10 @@ export default function CameraScreen() {
     try {
       const saved = await savePhotoToGallery(photo);
       if (saved) {
-        Alert.alert('Saved', 'Photo has been saved to your gallery.');
+        Alert.alert('Saved', 'Photo has been saved successfully.');
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Please try again.';
-      Alert.alert('Error', `Failed to save photo to gallery. ${message}`);
+      Alert.alert('Error', 'Failed to save photo. Please try again.');
     } finally {
       setIsSaving(false);
     }
