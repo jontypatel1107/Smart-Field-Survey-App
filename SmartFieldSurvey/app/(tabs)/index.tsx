@@ -25,7 +25,7 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const todayCount = surveys.filter(
-    (s) => s.date === '2026-07-18'
+    (s) => s.date === new Date().toISOString().split('T')[0]
   ).length;
 
   const recentSurveys = surveys.slice(0, 3);

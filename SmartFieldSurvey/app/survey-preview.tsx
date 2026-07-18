@@ -23,7 +23,7 @@ export default function SurveyPreviewScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
-  const { currentSurvey, selectedSurvey, updateSurvey, resetCurrentSurvey, setCurrentSurvey } = useSurvey();
+  const { currentSurvey, selectedSurvey, updateSurvey, resetCurrentSurvey, setCurrentSurvey, addSurvey } = useSurvey();
 
   const survey = selectedSurvey || currentSurvey;
   const isExisting = !!selectedSurvey;
@@ -67,7 +67,20 @@ export default function SurveyPreviewScreen() {
             if (isExisting && selectedSurvey) {
               updateSurvey(selectedSurvey.id, { status: 'Completed' });
             } else {
-              setCurrentSurvey({ ...currentSurvey, status: 'Completed' });
+              const newSurvey = {
+                id: `SRV-${Date.now()}`,
+                siteName: currentSurvey.siteName || '',
+                clientName: currentSurvey.clientName || '',
+                description: currentSurvey.description || '',
+                priority: currentSurvey.priority || 'Medium',
+                date: currentSurvey.date || new Date().toISOString().split('T')[0],
+                status: 'Completed' as const,
+                photo: currentSurvey.photo,
+                location: currentSurvey.location,
+                contact: currentSurvey.contact,
+                notes: currentSurvey.notes,
+              };
+              addSurvey(newSurvey);
             }
             Alert.alert('Submitted', 'Survey has been submitted successfully!', [
               { text: 'OK', onPress: () => { resetCurrentSurvey(); router.back(); } },
