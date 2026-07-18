@@ -7,16 +7,18 @@ import {
   TextInput,
   Pressable,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import * as Location from 'expo-location';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
 import { useSurvey } from '@/context/SurveyContext';
 import AppHeader from '@/components/AppHeader';
 
 const PRIORITIES = ['Low', 'Medium', 'High'] as const;
-const STEPS = ['Site Info', 'Details', 'Review'];
+const STEPS = ['Site Info', 'Details', 'Location', 'Review'];
 
 export default function CreateSurveyScreen() {
   const colorScheme = useColorScheme();
@@ -27,6 +29,7 @@ export default function CreateSurveyScreen() {
   const [step, setStep] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [isFetchingLocation, setIsFetchingLocation] = useState(false);
 
   const updateField = (field: string, value: string) => {
     setCurrentSurvey({ ...currentSurvey, [field]: value });
@@ -77,6 +80,7 @@ export default function CreateSurveyScreen() {
       priority: currentSurvey.priority || 'Medium',
       date: currentSurvey.date!,
       status: 'Pending' as const,
+      location: currentSurvey.location,
     };
 
     addSurvey(newSurvey);
@@ -264,7 +268,95 @@ export default function CreateSurveyScreen() {
     </>
   );
 
+  const handleCaptureLocation = async () => {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Needed', 'Please allow location access to capture your current position.');
+      return;
+    }
+
+    setIsFetchingLocation(true);
+    try {
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      setCurrentSurvey({
+        ...currentSurvey,
+        location: { latitude: loc.coords.latitude, longitude: loc.coords.longitude },
+      });
+    } catch {
+      Alert.alert('Error', 'Failed to get your location. Please try again.');
+    } finally {
+      setIsFetchingLocation(false);
+    }
+  };
+
   const renderStep2 = () => (
+    <View style={[styles.reviewCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <View style={styles.cardHeader}>
+        <Ionicons name="navigate" size={20} color={colors.primary} />
+        <Text style={[styles.reviewTitle, { color: colors.text }]}>Site Location</Text>
+      </View>
+
+      {currentSurvey.location ? (
+        <View style={styles.locationPreview}>
+          <View style={[styles.locationIcon, { backgroundColor: colors.secondaryLight }]}>
+            <Ionicons name="checkmark-circle" size={32} color={colors.secondary} />
+          </View>
+          <Text style={[styles.locationStatus, { color: colors.secondary }]}>Location Captured</Text>
+          <Text style={[styles.locationCoords, { color: colors.textSecondary }]}>
+            Lat: {currentSurvey.location.latitude.toFixed(6)}
+          </Text>
+          <Text style={[styles.locationCoords, { color: colors.textSecondary }]}>
+            Lng: {currentSurvey.location.longitude.toFixed(6)}
+          </Text>
+          <Pressable
+            onPress={handleCaptureLocation}
+            style={({ pressed }) => [styles.locationButton, { borderColor: colors.primary }, pressed && { opacity: 0.7 }]}
+          >
+            <Ionicons name="refresh" size={16} color={colors.primary} />
+            <Text style={[styles.locationButtonText, { color: colors.primary }]}>Capture Again</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <View style={styles.locationPreview}>
+          <View style={[styles.locationIcon, { backgroundColor: colors.primaryLight }]}>
+            <Ionicons name="location" size={32} color={colors.primary} />
+          </View>
+          <Text style={[styles.locationStatus, { color: colors.text }]}>No location captured yet</Text>
+          <Text style={[styles.locationCoords, { color: colors.textSecondary }]}>
+            Tap the button below to capture your current GPS coordinates
+          </Text>
+          <Pressable
+            onPress={handleCaptureLocation}
+            disabled={isFetchingLocation}
+            style={({ pressed }) => [
+              styles.locationButton,
+              { backgroundColor: colors.primary },
+              isFetchingLocation && { opacity: 0.6 },
+              pressed && { opacity: 0.8 },
+            ]}
+          >
+            {isFetchingLocation ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Ionicons name="location" size={16} color="#FFFFFF" />
+            )}
+            <Text style={[styles.locationButtonText, { color: '#FFFFFF' }]}>
+              {isFetchingLocation ? 'Fetching...' : 'Capture Location'}
+            </Text>
+          </Pressable>
+        </View>
+      )}
+
+      <View style={[styles.locationNote, { backgroundColor: colors.warningLight }]}>
+        <Ionicons name="information-circle" size={16} color={colors.warning} />
+        <Text style={[styles.locationNoteText, { color: colors.warning }]}>
+          Location is optional. You can skip this step.
+        </Text>
+      </View>
+    </View>
+  );
+
+  const renderStep3 = () => (
     <View style={[styles.reviewCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <Text style={[styles.reviewTitle, { color: colors.text }]}>Survey Summary</Text>
       {[
@@ -273,6 +365,7 @@ export default function CreateSurveyScreen() {
         { icon: 'document-text', label: 'Description', value: currentSurvey.description },
         { icon: 'flag', label: 'Priority', value: currentSurvey.priority || 'Medium' },
         { icon: 'calendar', label: 'Date', value: currentSurvey.date },
+        { icon: 'navigate', label: 'Location', value: currentSurvey.location ? `${currentSurvey.location.latitude.toFixed(4)}, ${currentSurvey.location.longitude.toFixed(4)}` : 'Not captured' },
       ].map((item) => (
         <View key={item.label} style={styles.reviewRow}>
           <View style={[styles.reviewIcon, { backgroundColor: colors.primaryLight }]}>
@@ -292,6 +385,7 @@ export default function CreateSurveyScreen() {
       case 0: return renderStep0();
       case 1: return renderStep1();
       case 2: return renderStep2();
+      case 3: return renderStep3();
       default: return null;
     }
   };
@@ -496,6 +590,56 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     marginTop: 1,
+  },
+  locationPreview: {
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
+  locationIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  locationStatus: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  locationCoords: {
+    fontSize: 13,
+    marginBottom: 2,
+  },
+  locationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 10,
+    marginTop: 16,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  locationButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  locationNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 16,
+    gap: 8,
+  },
+  locationNoteText: {
+    fontSize: 13,
+    fontWeight: '500',
+    flex: 1,
   },
   buttonGroup: {
     marginTop: 10,
