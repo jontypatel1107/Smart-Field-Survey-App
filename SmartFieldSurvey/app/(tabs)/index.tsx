@@ -11,7 +11,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
-import { mockSurveys, studentInfo } from '@/constants/data';
+import { studentInfo } from '@/constants/data';
+import { useSurvey } from '@/context/SurveyContext';
 import AppHeader from '@/components/AppHeader';
 import QuickActionCard from '@/components/QuickActionCard';
 
@@ -19,13 +20,14 @@ export default function DashboardScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
+  const { surveys } = useSurvey();
   const [refreshing, setRefreshing] = useState(false);
 
-  const todayCount = mockSurveys.filter(
+  const todayCount = surveys.filter(
     (s) => s.date === '2026-07-18'
   ).length;
 
-  const recentSurveys = mockSurveys.slice(0, 3);
+  const recentSurveys = surveys.slice(0, 3);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -126,13 +128,13 @@ export default function DashboardScreen() {
             </View>
             <View style={[styles.countBox, { backgroundColor: colors.secondaryLight }]}>
               <Text style={[styles.countNumber, { color: colors.secondary }]}>
-                {mockSurveys.length}
+                {surveys.length}
               </Text>
               <Text style={[styles.countLabel, { color: colors.secondary }]}>Total</Text>
             </View>
             <View style={[styles.countBox, { backgroundColor: colors.warningLight }]}>
               <Text style={[styles.countNumber, { color: colors.warning }]}>
-                {mockSurveys.filter((s) => s.status === 'In Progress').length}
+                {surveys.filter((s) => s.status === 'In Progress').length}
               </Text>
               <Text style={[styles.countLabel, { color: colors.warning }]}>Active</Text>
             </View>
