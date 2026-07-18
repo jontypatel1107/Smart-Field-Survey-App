@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import MapView, { Marker } from 'react-native-maps';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
 import { useSurvey } from '@/context/SurveyContext';
@@ -349,6 +350,27 @@ export default function SurveyPreviewScreen() {
               </View>
               {survey.location ? (
                 <>
+                  <View style={styles.mapContainer}>
+                    <MapView
+                      style={styles.map}
+                      initialRegion={{
+                        latitude: survey.location.latitude,
+                        longitude: survey.location.longitude,
+                        latitudeDelta: 0.01,
+                        longitudeDelta: 0.01,
+                      }}
+                      scrollEnabled={false}
+                    >
+                      <Marker
+                        coordinate={{
+                          latitude: survey.location.latitude,
+                          longitude: survey.location.longitude,
+                        }}
+                        title={survey.siteName}
+                        description={survey.clientName}
+                      />
+                    </MapView>
+                  </View>
                   {renderField('Latitude', survey.location.latitude?.toFixed(6), 'locate')}
                   {renderField('Longitude', survey.location.longitude?.toFixed(6), 'locate')}
                 </>
@@ -473,6 +495,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontStyle: 'italic',
     paddingVertical: 8,
+  },
+  mapContainer: {
+    borderRadius: 10,
+    overflow: 'hidden',
+    height: 200,
+    marginBottom: 12,
+  },
+  map: {
+    width: '100%',
+    height: '100%',
   },
   badgeRow: {
     flexDirection: 'row',
