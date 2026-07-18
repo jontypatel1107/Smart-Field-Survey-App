@@ -4,7 +4,9 @@ import { Survey, mockSurveys } from '@/constants/data';
 interface SurveyContextType {
   surveys: Survey[];
   currentSurvey: Partial<Survey>;
+  selectedSurvey: Survey | null;
   setCurrentSurvey: (survey: Partial<Survey>) => void;
+  setSelectedSurvey: (survey: Survey | null) => void;
   addSurvey: (survey: Survey) => void;
   deleteSurvey: (id: string) => void;
   updateSurvey: (id: string, updates: Partial<Survey>) => void;
@@ -25,6 +27,7 @@ const initialSurvey: Partial<Survey> = {
 export function SurveyProvider({ children }: { children: ReactNode }) {
   const [surveys, setSurveys] = useState<Survey[]>(mockSurveys);
   const [currentSurvey, setCurrentSurvey] = useState<Partial<Survey>>({ ...initialSurvey });
+  const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null);
 
   const addSurvey = (survey: Survey) => {
     setSurveys((prev) => [survey, ...prev]);
@@ -49,7 +52,9 @@ export function SurveyProvider({ children }: { children: ReactNode }) {
       value={{
         surveys,
         currentSurvey,
+        selectedSurvey,
         setCurrentSurvey,
+        setSelectedSurvey,
         addSurvey,
         deleteSurvey,
         updateSurvey,

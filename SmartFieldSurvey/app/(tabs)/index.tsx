@@ -20,7 +20,7 @@ export default function DashboardScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
-  const { surveys } = useSurvey();
+  const { surveys, setSelectedSurvey } = useSurvey();
   const [refreshing, setRefreshing] = useState(false);
 
   const todayCount = surveys.filter(
@@ -177,7 +177,7 @@ export default function DashboardScreen() {
                 { borderColor: colors.border },
                 pressed && { backgroundColor: colors.background },
               ]}
-              onPress={() => router.push(`/(tabs)/history` as any)}
+              onPress={() => { setSelectedSurvey(survey); router.push('/survey-preview'); }}
             >
               <View style={styles.surveyItemLeft}>
                 <Text style={[styles.surveySite, { color: colors.text }]}>{survey.siteName}</Text>

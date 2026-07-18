@@ -9,6 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
 import { useSurvey } from '@/context/SurveyContext';
@@ -20,6 +21,7 @@ export default function CreateSurveyScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { currentSurvey, setCurrentSurvey, addSurvey, resetCurrentSurvey } = useSurvey();
+  const router = useRouter();
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -217,30 +219,43 @@ export default function CreateSurveyScreen() {
         </View>
 
         {/* Buttons */}
-        <View style={styles.buttonRow}>
-          <Pressable
-            onPress={handleReset}
-            style={({ pressed }) => [
-              styles.button,
-              styles.resetButton,
-              { borderColor: colors.border },
-              pressed && { opacity: 0.7 },
-            ]}
-          >
-            <Ionicons name="refresh" size={18} color={colors.textSecondary} />
-            <Text style={[styles.resetButtonText, { color: colors.textSecondary }]}>Reset</Text>
-          </Pressable>
+        <View style={styles.buttonGroup}>
+          <View style={styles.buttonRow}>
+            <Pressable
+              onPress={handleReset}
+              style={({ pressed }) => [
+                styles.button,
+                styles.resetButton,
+                { borderColor: colors.border },
+                pressed && { opacity: 0.7 },
+              ]}
+            >
+              <Ionicons name="refresh" size={18} color={colors.textSecondary} />
+              <Text style={[styles.resetButtonText, { color: colors.textSecondary }]}>Reset</Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => router.push('/survey-preview')}
+              style={({ pressed }) => [
+                styles.button,
+                { backgroundColor: colors.accentLight, borderWidth: 1, borderColor: colors.accent },
+                pressed && { opacity: 0.7 },
+              ]}
+            >
+              <Ionicons name="eye" size={18} color={colors.accent} />
+              <Text style={[styles.resetButtonText, { color: colors.accent }]}>Preview</Text>
+            </Pressable>
+          </View>
 
           <Pressable
             onPress={handleSubmit}
             style={({ pressed }) => [
-              styles.button,
-              styles.submitButton,
+              styles.fullButton,
               { backgroundColor: colors.primary },
               pressed && { opacity: 0.8 },
             ]}
           >
-            <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
+            <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
             <Text style={styles.submitButtonText}>Create Survey</Text>
           </Pressable>
         </View>
@@ -308,20 +323,30 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  buttonGroup: {
+    marginTop: 10,
+    gap: 10,
+  },
   buttonRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10,
-    gap: 12,
+    gap: 10,
   },
   button: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
+    paddingVertical: 12,
     borderRadius: 10,
     gap: 6,
+  },
+  fullButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 10,
+    gap: 8,
   },
   resetButton: {
     borderWidth: 1,
