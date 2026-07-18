@@ -1,66 +1,69 @@
-import { useState, useEffect, useCallback, createContext, useContext } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useColorScheme as useSystemColorScheme } from 'react-native';
-import * as FileSystem from 'expo-file-system/legacy';
 
 type ThemePreference = 'light' | 'dark' | 'system';
 type ResolvedTheme = 'light' | 'dark';
 
-const THEME_FILE = `${FileSystem.documentDirectory}theme_preference.json`;
+let listeners: Array<() => void> = [];
+let currentPreference: ThemePreference = 'system';
 
-interface ThemeContextValue {
-  preference: ThemePreference;
-  resolved: ResolvedTheme;
-  isDark: boolean;
-  setPreference: (pref: ThemePreference) => void;
+function notify() {
+  listeners.forEach((l) => l());
 }
 
-const ThemeContext = createContext<ThemeContextValue | null>(null);
+export function setThemePreference(pref: ThemePreference) {
+  currentPreference = pref;
+  try {
+    const fs = require('expo-file-system/legacy');
+    const path = `${fs.documentDirectory}theme_preference.json`;
+    fs.writeAsStringAsync(path, JSON.stringify({ preference: pref })).catch(() => {});
+  } catch {}
+  notify();
+}
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const systemTheme = useSystemColorScheme() ?? 'light';
-  const [preference, setPreferenceState] = useState<ThemePreference>('system');
-  const [resolved, setResolved] = useState<ResolvedTheme>(systemTheme);
-
-  useEffect(() => {
-    FileSystem.readAsStringAsync(THEME_FILE)
-      .then((data) => {
-        const parsed = JSON.parse(data);
-        if (parsed?.preference) {
-          setPreferenceState(parsed.preference);
-          if (parsed.preference === 'light' || parsed.preference === 'dark') {
-            setResolved(parsed.preference);
-          } else {
-            setResolved(systemTheme);
-          }
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    if (preference === 'system') {
-      setResolved(systemTheme);
-    } else {
-      setResolved(preference);
-    }
-  }, [preference, systemTheme]);
-
-  const setPreference = useCallback((pref: ThemePreference) => {
-    setPreferenceState(pref);
-    FileSystem.writeAsStringAsync(THEME_FILE, JSON.stringify({ preference: pref }));
-  }, []);
-
-  const isDark = resolved === 'dark';
-
-  return (
-    <ThemeContext.Provider value={{ preference, resolved, isDark, setPreference }}>
-      {children}
-    </ThemeContext.Provider>
-  );
+export function getThemePreference(): ThemePreference {
+  return currentPreference;
 }
 
 export function useTheme() {
-  const ctx = useContext(ThemeContext);
-  if (!ctx) return { preference: 'system' as ThemePreference, resolved: 'light' as ResolvedTheme, isDark: false, setPreference: () => {} };
-  return ctx;
+  const systemTheme = useSystemColorScheme() ?? 'light';
+  const [, forceUpdate] = useState(0);
+
+  useEffect(() => {
+    const listener = () => forceUpdate((n) => n + 1);
+    listeners.push(listener);
+    return () => {
+      listeners = listeners.filter((l) => l !== listener);
+    };
+  }, []);
+
+  useEffect(() => {
+    try {
+      const fs = require('expo-file-system/legacy');
+      const path = `${fs.documentDirectory}theme_preference.json`;
+      fs.readAsStringAsync(path)
+        .then((data: string) => {
+          const parsed = JSON.parse(data);
+          if (parsed?.preference) {
+            currentPreference = parsed.preference;
+            forceUpdate((n) => n + 1);
+          }
+        })
+        .catch(() => {});
+    } catch {}
+  }, []);
+
+  const resolved: ResolvedTheme =
+    currentPreference === 'system' ? systemTheme : currentPreference;
+
+  const setPreference = useCallback((pref: ThemePreference) => {
+    setThemePreference(pref);
+  }, []);
+
+  return {
+    preference: currentPreference,
+    resolved,
+    isDark: resolved === 'dark',
+    setPreference,
+  };
 }

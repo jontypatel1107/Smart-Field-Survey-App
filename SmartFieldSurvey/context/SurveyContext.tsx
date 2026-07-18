@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Survey, mockSurveys } from '@/constants/data';
 
 const PROFILE_IMAGE_FILE = `${FileSystem.documentDirectory}profile_image.json`;
