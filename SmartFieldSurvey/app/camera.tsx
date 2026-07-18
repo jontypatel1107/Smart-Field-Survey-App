@@ -10,6 +10,8 @@ import {
 } from 'react-native';
 import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as MediaLibrary from 'expo-media-library';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
 import { useSurvey } from '@/context/SurveyContext';
@@ -26,6 +28,7 @@ export default function CameraScreen() {
   const [captureTime, setCaptureTime] = useState<string>('');
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const cameraRef = useRef<any>(null);
 
   if (!permission) {
@@ -76,6 +79,41 @@ export default function CameraScreen() {
     });
   };
 
+  const savePhotoToGallery = async (uri: string) => {
+    const permission = await MediaLibrary.requestPermissionsAsync();
+
+    if (permission.status !== 'granted') {
+      Alert.alert(
+        'Permission Needed',
+        'Please allow photo library access to save images to your gallery.'
+      );
+      return false;
+    }
+
+    const baseDirectory = FileSystem.documentDirectory ?? FileSystem.cacheDirectory;
+
+    if (!baseDirectory) {
+      throw new Error('A writable storage directory is not available on this device.');
+    }
+
+    const folderPath = `${baseDirectory}field-survey/`;
+    await FileSystem.makeDirectoryAsync(folderPath, { intermediates: true });
+
+    const fileName = `field-survey-${Date.now()}.jpg`;
+    const destinationUri = `${folderPath}${fileName}`;
+    const sourceUri = uri.startsWith('file://') ? uri : `file://${uri}`;
+
+    await FileSystem.copyAsync({ from: sourceUri, to: destinationUri });
+
+    try {
+      await MediaLibrary.saveToLibraryAsync(destinationUri);
+      return true;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Media library save failed: ${message}`);
+    }
+  };
+
   const handleCapture = async () => {
     if (!cameraRef.current || !isCameraReady || isCapturing) return;
 
@@ -85,6 +123,16 @@ export default function CameraScreen() {
       if (result?.uri) {
         setPhoto(result.uri);
         setCaptureTime(formatTime(new Date()));
+
+        try {
+          const saved = await savePhotoToGallery(result.uri);
+          if (saved) {
+            Alert.alert('Saved', 'Photo captured and saved to your gallery.');
+          }
+        } catch (saveError) {
+          const message = saveError instanceof Error ? saveError.message : 'Please try again.';
+          Alert.alert('Error', `Photo was captured, but could not be saved to gallery. ${message}`);
+        }
       }
     } catch {
       Alert.alert('Error', 'Failed to capture photo. Please try again.');
@@ -124,6 +172,23 @@ export default function CameraScreen() {
     }
   };
 
+  const handleSaveToGallery = async () => {
+    if (!photo || isSaving) return;
+
+    setIsSaving(true);
+    try {
+      const saved = await savePhotoToGallery(photo);
+      if (saved) {
+        Alert.alert('Saved', 'Photo has been saved to your gallery.');
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Please try again.';
+      Alert.alert('Error', `Failed to save photo to gallery. ${message}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const toggleFacing = () => {
     setFacing((current) => (current === 'back' ? 'front' : 'back'));
   };
@@ -155,15 +220,21 @@ export default function CameraScreen() {
           </Pressable>
 
           <Pressable
-            onPress={handleDelete}
+            onPress={handleSaveToGallery}
+            disabled={isSaving}
             style={({ pressed }) => [
               styles.actionButton,
-              { backgroundColor: colors.dangerLight },
+              { backgroundColor: colors.primaryLight },
+              isSaving && { opacity: 0.55 },
               pressed && { opacity: 0.7 },
             ]}
           >
-            <Ionicons name="trash" size={22} color={colors.danger} />
-            <Text style={[styles.actionText, { color: colors.danger }]}>Delete</Text>
+            {isSaving ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Ionicons name="download" size={22} color={colors.primary} />
+            )}
+            <Text style={[styles.actionText, { color: colors.primary }]}>Save</Text>
           </Pressable>
 
           <Pressable
@@ -176,6 +247,18 @@ export default function CameraScreen() {
           >
             <Ionicons name="attach" size={22} color={colors.secondary} />
             <Text style={[styles.actionText, { color: colors.secondary }]}>Attach</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={handleDelete}
+            style={({ pressed }) => [
+              styles.actionButton,
+              { backgroundColor: colors.dangerLight },
+              pressed && { opacity: 0.7 },
+            ]}
+          >
+            <Ionicons name="trash" size={22} color={colors.danger} />
+            <Text style={[styles.actionText, { color: colors.danger }]}>Delete</Text>
           </Pressable>
         </View>
       </View>
@@ -358,19 +441,22 @@ const styles = StyleSheet.create({
   },
   previewActions: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-around',
-    paddingVertical: 16,
+    gap: 10,
+    paddingVertical: 14,
     paddingHorizontal: 16,
     borderTopWidth: 1,
   },
   actionButton: {
-    flex: 1,
+    flexGrow: 1,
+    flexBasis: '45%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
+    minHeight: 48,
+    paddingVertical: 12,
     borderRadius: 10,
-    marginHorizontal: 6,
     gap: 6,
   },
   actionText: {
