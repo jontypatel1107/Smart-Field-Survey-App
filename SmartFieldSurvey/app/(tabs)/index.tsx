@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,13 +7,16 @@ import {
   ScrollView,
   Pressable,
   RefreshControl,
+  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import MapView, { Marker } from 'react-native-maps';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
 import { studentInfo } from '@/constants/data';
 import { useSurvey } from '@/context/SurveyContext';
+import { schedulePendingSurveyReminder, sendImmediateNotification } from '@/utils/notifications';
 import AppHeader from '@/components/AppHeader';
 import QuickActionCard from '@/components/QuickActionCard';
 
@@ -23,6 +26,12 @@ export default function DashboardScreen() {
   const router = useRouter();
   const { surveys, setSelectedSurvey, profileImage } = useSurvey();
   const [refreshing, setRefreshing] = useState(false);
+
+  const pendingCount = surveys.filter((s) => s.status === 'Pending').length;
+
+  useEffect(() => {
+    schedulePendingSurveyReminder(pendingCount);
+  }, [pendingCount]);
 
   const todayCount = surveys.filter(
     (s) => s.date === new Date().toISOString().split('T')[0]
@@ -78,7 +87,10 @@ export default function DashboardScreen() {
       <AppHeader
         subtitle={`${getGreeting()}, ${studentInfo.name.split(' ')[0]}!`}
         rightIcon="notifications-outline"
-        onRightPress={() => {}}
+        onRightPress={() => sendImmediateNotification(
+          'Pending Surveys',
+          `You have ${pendingCount} pending survey${pendingCount !== 1 ? 's' : ''} to complete.`
+        )}
       />
 
       <ScrollView
@@ -172,6 +184,41 @@ export default function DashboardScreen() {
             ))}
           </View>
         </View>
+
+        {/* Map View */}
+        {surveys.some((s) => s.location) && (
+          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View style={styles.cardHeader}>
+              <Ionicons name="map" size={20} color={colors.primary} />
+              <Text style={[styles.cardTitle, { color: colors.text }]}>Survey Locations</Text>
+            </View>
+            <View style={styles.mapContainer}>
+              <MapView
+                style={styles.map}
+                initialRegion={{
+                  latitude: surveys.find((s) => s.location)?.location?.latitude || 23.0225,
+                  longitude: surveys.find((s) => s.location)?.location?.longitude || 72.5714,
+                  latitudeDelta: 0.5,
+                  longitudeDelta: 0.5,
+                }}
+              >
+                {surveys
+                  .filter((s) => s.location)
+                  .map((survey) => (
+                    <Marker
+                      key={survey.id}
+                      coordinate={{
+                        latitude: survey.location!.latitude,
+                        longitude: survey.location!.longitude,
+                      }}
+                      title={survey.siteName}
+                      description={`${survey.clientName} — ${survey.status}`}
+                    />
+                  ))}
+              </MapView>
+            </View>
+          </View>
+        )}
 
         {/* Recent Survey Summary */}
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -310,6 +357,15 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     gap: 12,
+  },
+  mapContainer: {
+    borderRadius: 10,
+    overflow: 'hidden',
+    height: 200,
+  },
+  map: {
+    width: '100%',
+    height: '100%',
   },
   surveyItem: {
     flexDirection: 'row',
