@@ -65,8 +65,8 @@ export default function DashboardScreen() {
 
   const quickActions = [
     { title: 'New Survey', icon: 'add-circle', color: colors.primary, route: '/(tabs)/create' },
-    { title: 'Camera', icon: 'camera', color: colors.accent, route: '/(tabs)/camera' },
-    { title: 'Location', icon: 'location', color: colors.secondary, route: '/(tabs)/location' },
+    { title: 'Camera', icon: 'camera', color: colors.accent, route: '/camera' },
+    { title: 'Location', icon: 'location', color: colors.secondary, route: '/location' },
     { title: 'Contacts', icon: 'people', color: colors.warning, route: '/(tabs)/contacts' },
     { title: 'Clipboard', icon: 'clipboard', color: colors.danger, route: '/(tabs)/clipboard' },
     { title: 'History', icon: 'time', color: colors.accent, route: '/(tabs)/history' },
