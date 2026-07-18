@@ -28,6 +28,13 @@
     "plugins": [
       "expo-router",
       [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Smart Field Survey to access your camera for capturing site photos",
+          "microphonePermission": "Allow Smart Field Survey to access your microphone for video recording"
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
