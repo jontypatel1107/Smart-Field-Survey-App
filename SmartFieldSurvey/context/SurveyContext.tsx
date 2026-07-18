@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import * as FileSystem from 'expo-file-system';
 import { Survey, mockSurveys } from '@/constants/data';
 
 const PROFILE_IMAGE_FILE = `${FileSystem.documentDirectory}profile_image.json`;
+const SURVEYS_FILE = `${FileSystem.documentDirectory}surveys.json`;
 
 interface SurveyContextType {
   surveys: Survey[];
@@ -34,8 +35,19 @@ export function SurveyProvider({ children }: { children: ReactNode }) {
   const [currentSurvey, setCurrentSurvey] = useState<Partial<Survey>>({ ...initialSurvey });
   const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null);
   const [profileImage, setProfileImageState] = useState<string | null>(null);
+  const loadedRef = useRef(false);
 
   useEffect(() => {
+    FileSystem.readAsStringAsync(SURVEYS_FILE)
+      .then((data) => {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setSurveys(parsed);
+        }
+      })
+      .catch(() => {})
+      .finally(() => { loadedRef.current = true; });
+
     FileSystem.readAsStringAsync(PROFILE_IMAGE_FILE)
       .then((data) => {
         const parsed = JSON.parse(data);
@@ -43,6 +55,12 @@ export function SurveyProvider({ children }: { children: ReactNode }) {
       })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (loadedRef.current) {
+      FileSystem.writeAsStringAsync(SURVEYS_FILE, JSON.stringify(surveys));
+    }
+  }, [surveys]);
 
   const setProfileImage = useCallback((imageUri: string | null) => {
     setProfileImageState(imageUri);
