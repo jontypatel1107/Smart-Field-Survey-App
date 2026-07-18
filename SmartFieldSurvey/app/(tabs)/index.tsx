@@ -154,7 +154,7 @@ export default function DashboardScreen() {
                 title={action.title}
                 icon={action.icon}
                 color={action.color}
-                onPress={() => router.push(action.route as any)}
+                onPress={() => router.navigate(action.route as any)}
               />
             ))}
           </View>

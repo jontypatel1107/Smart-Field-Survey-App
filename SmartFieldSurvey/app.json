@@ -35,6 +35,13 @@
         }
       ],
       [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Smart Field Survey to access your location for field surveys",
+          "locationWhenInUsePermission": "Allow Smart Field Survey to access your location for field surveys"
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
