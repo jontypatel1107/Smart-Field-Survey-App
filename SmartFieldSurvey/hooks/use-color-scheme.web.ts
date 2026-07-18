@@ -1,17 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useTheme } from './use-theme';
+import { useTheme as useThemeBase } from './use-theme';
 
 export function useColorScheme() {
-  const [hasHydrated, setHasHydrated] = useState(false);
-  const { resolved } = useTheme();
-
-  useEffect(() => {
-    setHasHydrated(true);
-  }, []);
-
-  if (hasHydrated) {
-    return resolved;
-  }
-
-  return 'light';
+  return useThemeBase().resolved;
 }

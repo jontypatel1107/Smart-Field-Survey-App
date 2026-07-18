@@ -1,13 +1,22 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, createContext, useContext } from 'react';
 import { useColorScheme as useSystemColorScheme } from 'react-native';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 type ThemePreference = 'light' | 'dark' | 'system';
 type ResolvedTheme = 'light' | 'dark';
 
 const THEME_FILE = `${FileSystem.documentDirectory}theme_preference.json`;
 
-export function useTheme() {
+interface ThemeContextValue {
+  preference: ThemePreference;
+  resolved: ResolvedTheme;
+  isDark: boolean;
+  setPreference: (pref: ThemePreference) => void;
+}
+
+const ThemeContext = createContext<ThemeContextValue | null>(null);
+
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const systemTheme = useSystemColorScheme() ?? 'light';
   const [preference, setPreferenceState] = useState<ThemePreference>('system');
   const [resolved, setResolved] = useState<ResolvedTheme>(systemTheme);
@@ -43,5 +52,15 @@ export function useTheme() {
 
   const isDark = resolved === 'dark';
 
-  return { preference, resolved, isDark, setPreference };
+  return (
+    <ThemeContext.Provider value={{ preference, resolved, isDark, setPreference }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+
+export function useTheme() {
+  const ctx = useContext(ThemeContext);
+  if (!ctx) throw new Error('useTheme must be used within ThemeProvider');
+  return ctx;
 }
